@@ -1,4 +1,5 @@
 import copy
+import time
 class KakuroSolver:
     def __init__(self, puzzel):
         self.puzzel = puzzel
@@ -33,7 +34,7 @@ class KakuroSolver:
     def findRightBlockNumber(self, row, col):
         i , j = self.findLeftBlockNumber(row, col)
         for k in range(j + 1, len(self.puzzel)):
-            if self.isBlockNumber(row, k):
+            if self.isBlockNumber(row, k) or self.isBlock(row, k):
                 return row, k
         return None, None
     
@@ -46,7 +47,7 @@ class KakuroSolver:
     def findDownBlockNumber(self, row, col):
         i, j = self.findUpBlockNumber(row, col)
         for k in range(i + 1, len(self.puzzel)):
-            if self.isBlockNumber(k, col):
+            if self.isBlockNumber(k, col) or self.isBlock(k, col):
                 return k, col
         return None, None
     
@@ -295,45 +296,27 @@ class KakuroSolver:
                 self.towDPosibilityArray[row][col].remove(i)
             if((i > k or i > kk) and i in self.towDPosibilityArray[row][col]):
                 self.towDPosibilityArray[row][col].remove(i)
+
+    
     
     def proIsSafe(self, row, col, num):
         self.puzzel[row][col] = num
+        self.upDate2DPosibilityArray(row, col)
 
-        self.removeNumPosibilityFromRow(row, col, num)
-        if self.isRowZeroPosibilities(row, col) and not self.isFullRow:
+        
+
+        if self.isFullCol(row, col) and self.sumOfCol(row, col) != self.numberOfCol(row, col):
             self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
+            self.upDate2DPosibilityArray(row, col)
+            return False
+
+
+        if self.isFullRow(row, col) and self.sumOfRow(row, col) != self.numberOfRow(row, col):
+            self.puzzel[row][col] = "-"
+            self.upDate2DPosibilityArray(row, col)
             return False
         
-        self.removeNumPosibilityFromCol(row, col, num)
-        if self.isColZeroPosibilities(row, col) and not self.isFullCol:
-            self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
-            return False
-        
-        self.removeBiggerNumPosibilityInRow(row, col)
-        if self.isRowZeroPosibilities(row, col) and not self.isFullRow:
-            self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
-            return False
-        
-        self.removeBiggerNumPosibilityInCol(row, col)
-        if self.isColZeroPosibilities(row, col) and not self.isFullCol:
-            self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
-            return False
-        
-        if self.isFullRow(row, col) and self.numberOfRow(row, col) != self.sumOfRow(row, col):
-            self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
-            return False
-        
-        if self.isFullCol(row, col) and self.numberOfCol(row, col) != self.sumOfCol(row, col):
-            self.puzzel[row][col] = "-"
-            self.upDate2DPosibilityArray(row,col)
-            return False
-        
-        self.puzzel[row][col] = "-"
+
         return True
     
     def initializePosibilityArray(self):
@@ -365,6 +348,8 @@ class KakuroSolver:
         
     def proSolve(self):
         row, col = self.findMinPosibility()
+        if row != None and len(self.towDPosibilityArray[row][col]) == 0 and self.puzzel[row][col] == "-":
+            return False
         if row == None:
             return True
         self.upDate2DPosibilityArray(row, col)
@@ -376,7 +361,7 @@ class KakuroSolver:
                     if self.proSolve():
                         return True
                     self.puzzel[row][col] = "-"
-                    self.towDPosibilityArray = copy2DPosibilityArray 
+                    self.towDPosibilityArray = copy.deepcopy(copy2DPosibilityArray) 
         return False
     
     def proPrint(self):
@@ -399,8 +384,55 @@ SamplePuzzel1 = [["x", "05/", "19/", "x"],
                 ["/12", "-", "-", "-"],
                 ["x", "/03", "-", "-"]]
 
+SamplePuzzel2 = [["x", "x", "20/", "03/", "23/", "x", "12/", "16/"],
+                ["x", "05/12", "-", "-", "-", "24/16", "-", "-"],
+                ["/41", "-", "-", "-", "-", "-", "-", "-"],
+                ["/03", "-", "-", "24/13", "-", "-", "11/", "x"],
+                ["x", "/17", "-", "-", "23/10", "-", "-", "16/"],
+                ["x", "14/", "05/16", "-", "-", "17/11", "-", "-"],
+                ["/42", "-", "-", "-", "-", "-", "-", "-"],
+                ["/10", "-", "-", "/22", "-", "-", "-", "x"]]
+
+SamplePuzzel3 = [["x", "x", "x" ,"17/", "19/", "x", "x", "07/", "44/", "x"],
+                ["x", "03/", "37/17", "-", "-", "X", "/10", "-", "-", "23/"],
+                ["/20", "-", "-", "-", "-", "06/", "03/15", "-", "-", "-"],
+                ["/05", "-", "-", "03/25", "-", "-", "-", "-", "-", "-"],
+                ["x", "/08", "-", "-", "/03", "-", "-", "10/15", "-", "-"],
+                ["x", "13/03", "-", "-", "07/", "05/", "/17", "-", "-", "x"],
+                ["/09", "-", "-", "10/03", "-", "-", "16/06", "-", "-", "11/"],
+                ["/38", "-", "-", "-", "-", "-", "-", "03/17", "-", "-"],
+                ["/07", "-", "-", "-", "x", "/12", "-", "-", "-", "-"],
+                ["x", "/04", "-", "-", "x", "/03", "-", "-", "x", "x"],]
+
+SamplePuzzel4 = [["x", "x", "x" ,"17/", "19/", "x", "x", "07/", "44/", "x"],
+                ["x", "03/", "37/17", "-", "-", "X", "/10", "-", "-", "23/"],
+                ["/20", "-", "-", "-", "-", "06/", "03/15", "-", "-", "-"],
+                ["/05", "-", "-", "03/25", "-", "-", "-", "-", "-", "-"],
+                ["x", "/08", "-", "-", "/03", "-", "-", "10/15", "-", "-"],
+                ["x", "13/03", "-", "-", "07/", "05/", "/17", "-", "-", "x"],
+                ["/09", "-", "-", "10/03", "-", "-", "16/06", "-", "-", "11/"],
+                ["/38", "-", "-", "-", "-", "-", "-", "03/17", "-", "-"],
+                ["/07", "-", "-", "-", "x", "/12", "-", "-", "-", "-"],
+                ["x", "/04", "-", "-", "x", "/03", "-", "-", "x", "x"],]
 
 
-solver1 = KakuroSolver(SamplePuzzel1)
-solver1.Print()
+SamplePuzzel5 = [["x", "x", "x" ,"15/", "24/", "x"], 
+                 ["x", "x", "/11", "-", "-", "14/"],
+                 ["x", "11/", "24/21", "-", "-", "-"],
+                 ["/35", "-", "-", "-", "-", "-"],
+                 ["/13", "-", "-", "-", "x", "x"],
+                 ["x", "/08", "-", "-", "x", "x"],
+                 ]
+
+
+
+solver1 = KakuroSolver(SamplePuzzel3)
+solver2 = KakuroSolver(SamplePuzzel4)
+startTime = time.time()
 solver1.proPrint()
+endTime = time.time()
+print(endTime - startTime)
+startTime1 = time.time()
+solver2.Print()
+endTime1 = time.time()
+print(endTime1 - startTime1)
